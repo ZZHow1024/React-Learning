@@ -165,7 +165,7 @@
         
         [Lodash](https://lodash.com/)
         
-- 案例演示：https://github.com/ZZHow1024/React-Learning/tree/main/Day01/react-basic-pro
+- 案例演示：[**react-basic-pro**](https://github.com/ZZHow1024/React-Learning/tree/main/Day01/react-basic-pro)
 
 # classnames优化类名控制
 
