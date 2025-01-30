@@ -36,6 +36,34 @@
     - `pnpm add eslint eslint-plugin-react --D`
     - `pnpm add prettier eslint-config-prettier eslint-plugin-prettier -D`
     - `eslint --init`
+        
+        ```jsx
+        // React 插件配置
+        {
+          plugins: {
+            react,
+          },
+          languageOptions: {
+            parserOptions: {
+              ecmaVersion: "latest", // 使用最新的 ECMAScript 标准
+              sourceType: "module",
+              ecmaFeatures: {
+                jsx: true, // 启用 JSX 支持
+              },
+            },
+          },
+          settings: {
+            react: {
+              version: "detect", // 自动检测 React 版本
+            },
+          },
+          rules: {
+            // 关闭 react-in-jsx-scope，因为 React 17+ 不再需要显式引入 React
+            "react/react-in-jsx-scope": "off",
+          },
+        }
+        ```
+        
 - 安装 Ant Design 组件库
     - 简介：Ant Design 是由蚂蚁金服出品的社区使用最广的 **React PC 端组件库**，**内置了常用的现成组件**，可以帮助我们快速开发 PC 管理后台项目
     - 安装AntD到项目：`pnpm add antd`
@@ -129,3 +157,86 @@
 - 封装 Token 的存取删方法
     - 原因：对于 Token 的各类操作在项目多个模块中都有用到，为了共享复用可以封装成工具函数
     - utils/token.js：setToken、getToken 和 removeToken → 其他模块
+- Axios 请求拦截器注入 Token
+    - 原因：Token 作为用户的一个标识数据，后端很多接口都会以它作为接口权限判断的依据；请求拦截器注入 Token 之后，所有用到 Axios 实例的接口请求都自动携带了 Token
+    - 结构：utils/request.js →axios（Token 统一注入）
+    - 技术方案：
+        - Axios 请求拦截器请求头中注入 Token
+        - 调用接口测试 Token 是否成功携带
+- 使用 Token 做路由权限控制
+    - 原因：有些路由页面内的内容信息比较敏感，如果用户没有经过登录获取到有效 Token，是没有权限跳转的，根据 Token 的有无控制当前路由是否可以跳转就是路由的权限控制
+    - 技术方案：
+        - 路由组件
+        - 是否有 Token
+            - 是（正常返回路由组件）→ 路由组件
+            - 否（强制跳回到登录）→ 跳回登录
+    - 技术方案：封装高阶组件 → 测试有无 Token 条件下的高阶组件
+
+# Layout模块
+
+- 结构创建和样式初始化
+    - 静态结构搭建
+    - 样式初始化
+        - 安装 Normalize.css：`pnpm add normalize.css`
+        - 修改 index.css 样式
+            
+            ```css
+            html,
+            body {
+              margin: 0;
+              height: 100%;
+            }
+            
+            #root {
+              height: 100%;
+            }
+            ```
+            
+- 二级路由配置
+    - 结构：
+        - Layout（一级路由）
+            - Home（二级路由）
+            - Article（二级路由）
+            - Publish（二级路由）
+        - Login（一级路由）
+    - 步骤：准备三个二级路由组件 → router 中通过 children 配置项进行配置 →Layout 组件中配置二级路由出口
+- 菜单点击跳转路由实现
+    - 实现效果：点击左侧菜单可以跳转到对应的目标路由
+    - 思路分析：
+        1. 左侧菜单要和路由形成一一对应的关系（知道点了谁）
+        2. 点击时拿到路由路径调用路由方法跳转（跳转到对应的路由下面）
+    - 步骤：菜单参数 item 中 key 属性换成路由的路径地址 → 点击菜单时通过 key 获取路由地址跳转
+- 根据当前路由路径高亮菜单
+    - 实现效果：页面在刷新时可以根据当前的路由路径让对应的左侧菜单高亮显示
+    - 思路分析
+        1. 获取当前 URL 上的路由路径
+        2. 找到菜单组件负责高亮的属性，绑定当前的路由路径
+- 展示个人信息
+    - 用户信息维护：和 Token 令牌类似，用户的信息通常很有可能在多个组件中都需要共享使用，所以同样应该**放到 Redux 中维护**
+    - 步骤：使用 Redux 进行信息管理 → Layout 组件中提交 action → Layout 组件中完成渲染
+- 退出登录实现
+    - 退出登录是一个通用的业务逻辑
+    - 步骤：
+        1. 提示用户是否确认要退出（危险操作，二次确认）
+        2. 用户确认之后清除用户信息（Token 以及其它个人信息）
+        3. 跳转到登录页（为下次登录做准备）
+- 处理 Token 失效
+    - 简介：为了用户的安全和隐私考虑，在用户**长时间未在网站中做任何操作**且**规定的失效时间到达**之后，当前的 Token 就会失效，一旦失效，不能再作为用户令牌标识请求隐私数据
+    - 如何知道 Token 失效：通常在 Token 失效之后再去请求接口，后端会返回 **401 状态码**，前端可以监控这个状态做后续的操作
+- Echarts 基础图表实现
+    - 步骤：
+        1. 按照三方插件文档中的“快速开始”，快速跑起来 Demo
+            - 安装：`pnpm add echarts`
+            - 导入：`import * as echarts from "echarts";`
+        2. 按照业务需求修改配置项做定制处理
+- Echarts 组件封装实现
+    - 原因：组件封装主要解决了**复用**的问题
+    - 思路：把图表不一样的部分抽象成 props 参数做适配
+    - 步骤：保持功能代码不变抽象成组件 → 替换可变的部分变成 prop 参数
+- API 模块封装
+    - 现存问题：当前的接口请求放到了功能实现的位置，没有在固定的模块内维护，后期查找维护困难
+    - 解决思路：把项目中的所有接口按照业务模块以函数的形式统一封装到 apis 模块中
+    - 结构：reauest.js → apis
+        - user.js（用户相关请求函数）
+        - article.js（文章相关请求函数）
+        - 其它业务接口模块…
