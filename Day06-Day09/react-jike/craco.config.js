@@ -1,4 +1,5 @@
 // 扩展 Webpack 的配置
+/* eslint-disable */
 
 const path = require("path");
 
