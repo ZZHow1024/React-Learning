@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Card,
   Breadcrumb,
@@ -7,6 +7,7 @@ import {
   Radio,
   DatePicker,
   Select,
+  Popconfirm,
 } from "antd";
 import locale from "antd/es/date-picker/locale/zh_CN";
 
@@ -15,57 +16,71 @@ import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import img404 from "@/assets/error.png";
 import useChannelList from "@/hooks/useChannelList";
 import { useEffect, useState } from "react";
-import { getArticleListAPI } from "@/apis/article";
+import { deleteArticleAPI, getArticleListAPI } from "@/apis/article";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 const Article = () => {
+  const navigate = useNavigate();
+
   // 获取频道列表
   const { channelList } = useChannelList();
 
   // 获取文章列表
+  const [reqData, setReqData] = useState({
+    status: "",
+    channel_id: "",
+    begin_pubdate: "",
+    end_pubdate: "",
+    page: 1,
+    per_page: 3,
+  });
   const [list, setList] = useState([]);
   const [count, setCount] = useState(0);
   useEffect(() => {
-    async function getArticleList() {
-      const res = await getArticleListAPI();
+    async function getArticleList(reqData) {
+      const res = await getArticleListAPI(reqData);
       setList(res.data.data.results);
       setCount(res.data.data.total_count);
     }
 
-    getArticleList().then();
+    getArticleList(reqData).then();
+  }, [reqData]);
 
-    // 测试数据
-    const data = [
-      {
-        id: "8218",
-        comment_count: 0,
-        cover: {
-          images: [],
-        },
-        like_count: 0,
-        pubdate: "2019-03-11 09:00:00",
-        read_count: 0,
-        status: 1,
-        title: "测试数据1",
-      },
-      {
-        id: "8217",
-        comment_count: 0,
-        cover: {
-          images: [],
-        },
-        like_count: 0,
-        pubdate: "2019-03-11 08:00:00",
-        read_count: 2,
-        status: 2,
-        title: "测试数据2",
-      },
-    ];
-    setList((list) => list.concat(data));
-    setCount((count) => count + 2);
-  }, []);
+  // 筛选文章逻辑
+  const onFinish = (value) => {
+    setReqData({
+      ...reqData,
+      channel_id: value.channel_id,
+      status: value.status,
+      begin_pubdate:
+        value.date === undefined || value.date === null
+          ? null
+          : value.date[0].format("YYYY-DD-MM"),
+      end_pubdate:
+        value.date === undefined || value.date === null
+          ? null
+          : value.date[1].format("YYYY-DD-MM"),
+    });
+  };
+
+  // 换页逻辑
+  const onPageChange = (page) => {
+    setReqData({
+      ...reqData,
+      page: page,
+    });
+  };
+
+  // 确认删除文章
+  const onConfirm = async (data) => {
+    await deleteArticleAPI(data.id);
+    setReqData({
+      ...reqData,
+      page: 1,
+    });
+  };
 
   // 文章状态枚举
   const status = {
@@ -116,13 +131,26 @@ const Article = () => {
       render: (data) => {
         return (
           <Space size="middle">
-            <Button type="primary" shape="circle" icon={<EditOutlined />} />
             <Button
               type="primary"
-              danger
               shape="circle"
-              icon={<DeleteOutlined />}
+              icon={<EditOutlined />}
+              onClick={() => navigate(`/publish?id=${data.id}`)}
             />
+            <Popconfirm
+              title="删除文章"
+              description="确定删除文章？"
+              onConfirm={() => onConfirm(data)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button
+                type="primary"
+                danger
+                shape="circle"
+                icon={<DeleteOutlined />}
+              />
+            </Popconfirm>
           </Space>
         );
       },
@@ -142,7 +170,7 @@ const Article = () => {
         }
         style={{ marginBottom: 20 }}
       >
-        <Form initialValues={{ status: "" }}>
+        <Form initialValues={{ status: "" }} onFinish={onFinish}>
           <Form.Item label="状态" name="status">
             <Radio.Group>
               <Radio value={""}>全部</Radio>
@@ -176,7 +204,16 @@ const Article = () => {
 
       {/* 表格区域 */}
       <Card title={`根据筛选条件共查询到 ${count} 条结果：`}>
-        <Table rowKey="id" columns={columns} dataSource={list} />
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={list}
+          pagination={{
+            total: count,
+            pageSize: reqData.per_page,
+            onChange: onPageChange,
+          }}
+        />
       </Card>
     </div>
   );

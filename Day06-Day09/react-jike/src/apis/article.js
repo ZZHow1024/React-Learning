@@ -20,11 +20,44 @@ function publishArticleAPI(data) {
 }
 
 // 获取文章列表
-function getArticleListAPI(query) {
+function getArticleListAPI(params) {
   return request({
-    url: "mp/articles",
+    url: "/mp/articles",
+    method: "GET",
+    params,
+  });
+}
+
+// 删除文章
+function deleteArticleAPI(id) {
+  return request({
+    url: `/mp/articles/${id}`,
+    method: "DELETE",
+  });
+}
+
+// 获取文章详情
+function getArticleDetailAPI(id) {
+  return request({
+    url: `/mp/articles/${id}`,
     method: "GET",
   });
 }
 
-export { getChannelAPI, publishArticleAPI, getArticleListAPI };
+// 更新文章
+function updateArticleAPI(data, id) {
+  return request({
+    url: `/mp/articles/${id}?draft=false`,
+    method: "PUT",
+    data,
+  });
+}
+
+export {
+  getChannelAPI,
+  publishArticleAPI,
+  getArticleListAPI,
+  deleteArticleAPI,
+  getArticleDetailAPI,
+  updateArticleAPI,
+};

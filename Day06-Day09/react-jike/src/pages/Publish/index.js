@@ -11,18 +11,24 @@ import {
   message,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import "./index.scss";
 
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { useRef, useState } from "react";
-import { publishArticleAPI } from "@/apis/article";
+import { useEffect, useRef, useState } from "react";
+import {
+  getArticleDetailAPI,
+  publishArticleAPI,
+  updateArticleAPI,
+} from "@/apis/article";
 import useChannelList from "@/hooks/useChannelList";
 
 const { Option } = Select;
 
 const Publish = () => {
+  const navigate = useNavigate();
+
   // 获取频道列表
   const { channelList } = useChannelList();
 
@@ -36,12 +42,25 @@ const Publish = () => {
       content,
       cover: {
         type: imageType,
-        images: imageList.map((item) => item.response.data.url),
+        images: imageList.map((item) => {
+          if (item.response) {
+            return item.response.data.url;
+          } else {
+            return item.url;
+          }
+        }),
       },
       channel_id,
     };
 
-    publishArticleAPI(data);
+    if (articleId) {
+      updateArticleAPI(data, articleId);
+      message.success("更新成功");
+    } else {
+      publishArticleAPI(data);
+      message.success("发布成功");
+    }
+    navigate("/article");
   };
 
   // 上传图片回调
@@ -62,6 +81,30 @@ const Publish = () => {
       );
   };
 
+  // 回填数据
+  const [searchParams] = useSearchParams();
+  const articleId = searchParams.get("id");
+  const formRef = useRef(null);
+  useEffect(() => {
+    async function getArticleDetail() {
+      const res = await getArticleDetailAPI(articleId);
+      formRef.current.setFieldsValue({
+        ...res.data.data,
+        type: res.data.data.cover.type,
+      });
+      setImageType(res.data.data.cover.type);
+      setImageList(
+        res.data.data.cover.images.map((item) => {
+          return {
+            url: item,
+          };
+        }),
+      );
+    }
+
+    if (articleId !== null) getArticleDetail();
+  }, [articleId]);
+
   return (
     <div className="publish">
       <Card
@@ -69,12 +112,13 @@ const Publish = () => {
           <Breadcrumb
             items={[
               { title: <Link to={"/"}>首页</Link> },
-              { title: "发布文章" },
+              { title: (articleId === null ? "发布" : "编辑") + "文章" },
             ]}
           />
         }
       >
         <Form
+          ref={formRef}
           labelCol={{ span: 4 }}
           wrapperCol={{ span: 16 }}
           initialValues={{ type: 0 }}
@@ -113,6 +157,7 @@ const Publish = () => {
               <Upload
                 ref={imageUpload}
                 listType="picture-card"
+                fileList={imageList}
                 showUploadList
                 action={"http://geek.itheima.net/v1_0/upload"}
                 name="image"

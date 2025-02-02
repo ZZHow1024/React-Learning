@@ -7,17 +7,10 @@ function useChannelList() {
   useEffect(() => {
     const getChannelList = async () => {
       const res = await getChannelAPI();
-      setChannelList(res.data.data.channel);
+      setChannelList(res.data.data.channels);
     };
 
     getChannelList().then();
-    const testArr = [
-      {
-        id: -1,
-        name: "测试频道",
-      },
-    ];
-    setChannelList((channel) => channel.concat(testArr));
   }, []);
 
   return {
