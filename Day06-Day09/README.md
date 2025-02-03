@@ -304,11 +304,170 @@
 - 渲染 table 文章列表
     - 步骤：
         1. 封装请求接口
-        2. 使用 useState 维护状态数据
-        3. 使用 useEffect 发送请求
+        2. 使用 `useState` 维护状态数据
+        3. 使用 `useEffect` 发送请求
         4. 在组件身上绑定对应属性完成渲染
 - 适配文章状态
     - 实现效果：根据文章的不同状态在状态列显示不同 Tag
     - 实现思路：
         1. 如果要适配的状态只有两个：三元条件渲染
         2. 如果要适配的状态有多个：枚举渲染
+- 筛选功能实现
+    - 筛选功能的本质：给请求列表接口传递不同的参数和后端要不同的数据
+    - 步骤：
+        1. 准备完整的请求参数对象
+        2. 获取用户选择的表单数据
+        3. 把表单数据放置到接口对应的字段中
+        4. 重新调用文章列表接口渲染 Table 列表
+- 分页功能实现
+    - 实现效果：点击页数，在 Table 中显示当前页的数据列表
+    - 步骤：
+        1. 实现分页展示（页数 = 总数 / 每页条数）
+        2. 点击分页拿到当前点击的页数
+        3. 使用页数作为请求参数重新获取文章列表渲染
+- 删除功能实现
+    - 实现效果：点击删除按钮删除当前文章
+    - 步骤：
+        1. 点击删除弹出确认框
+        2. 得到文章 ID，使用 ID 调用删除接口
+        3. 更新文章列表
+- 编辑文章跳转
+    - 实现效果：点击编辑文章跳转到文章编辑页
+    - 步骤：
+        1. 获取当前文章 ID
+        2. 跳转到创建（编辑）文章的路由
+
+# 编辑文章
+
+- 回填基础数据
+    - 实现效果：把页面中除了封面之外的其余字段完成回填
+    - 步骤：
+        1. 通过文章 ID 获取到文章详情数据
+        2. 调用 Form 组件实例万法 `setFieldsValue` 回显数据
+- 回填封面信息
+    - 实现效果：回填封面的类型以及上传过的封面图片
+    - 步骤：
+        1. 使用 cover 中的 type 字段回填封面类型
+        2. 使用 cover 中的 images 字段回填封面图片
+- 根据 ID 适配状态
+    - 实现效果：发布文章时显示发布文章，编辑文章状态下显示编辑文章
+    - 思路：**判断是否有 ID**，有文章 ID 代表编辑状态，没有文章 ID 代表发布状态
+- 更新文章
+    - 实现效果：当用户对文章内容做修改之后，点击确认更新文章内容
+    - 思路：更新文章和新增文章相比，大部分的逻辑都是一致的，**稍作参数适配调用不同接口即可**
+    - 步骤：
+        1. 适配 URL 参数
+        2. 调用文章更新接口
+
+# 项目打包
+
+- 项目打包：打包指的是将项目中的**源代码和资源文件进行处理**，生成可在生产环境中运行的**静态文件**的过程
+- 打包命令：`pnpm build`
+- 本地预览（模拟服务器运行项目）
+    - 本地预览是指在本地通过静态服务器模拟生产服务器运行项目的过程
+    1. 安装本地服务包：`pnpm add -g serve` 
+    2. `serve -s ./build` 
+    3. 浏览器中访问 http://localhost:3000/
+
+# 打包优化
+
+- 配置路由懒加载
+    - 路由懒加载：指路由的 JS 资源只有在被访问时才会动态获取，目的是为了**优化项目首次打开的时间**
+    - 步骤：
+        1. 把路由修改为由 React 提供的 **lazy 函数进行动态导入**
+        2. 使用 React 内置的 **Suspense 组件**包裹路虫中 element 选项对应的组件
+- 包体积分析
+    - 通过**可视化**的方式，直观的体现项目中各种包打包之后的体积大小，方便做优化
+    - 步骤：
+        1. 安装包：`pnpm add source-map-explorer`
+        2. 配置命令指定要分析的 js 文件
+            
+            ```jsx
+            // package.js
+            "scripts": {
+            	// ...
+              "analyze": "source-map-explorer 'build/static/js/*.js'"
+            }
+            ```
+            
+- CDN 优化
+    - CDN：是一种内容分发网络服务，当用户请求网站内容时，由离用户最近的服务器将缓存的资源内容传递给用户
+    - 可以放到 CDN 服务器的资源：
+        - 体积较大的非业务 JS 文件，比如 react、react-dom
+        1. 体积较大，需要利用 CDN 文件在浏览器的缓存特性，加快加载时间
+        2. 非业务 JS 文件，不需要经常做变动，CDN 不用频繁更新缓存
+    - 步骤：
+        1. 把需要做 CDN 缓存的文件排除在打包之外(react、react-dom)
+        2. 以 CDN 的方式重新引入资源(react、react-dom)
+    - 配置：
+        - craco.config.js
+        
+        ```jsx
+        // 扩展 Webpack 的配置
+        /* eslint-disable */
+        
+        const path = require("path");
+        const { whenProd, getPlugin, pluginByName } = require("@craco/craco");
+        
+        module.exports = {
+          webpack: {
+            alias: {
+              "@": path.resolve(__dirname, "./src"),
+            },
+            // 配置 CDN
+            configure: (webpackConfig) => {
+              let cdn = {
+                js: [],
+              };
+              whenProd(() => {
+                // key: 不参与打包的包（由 dependencies 依赖项中的 key 决定）
+                // value: CDN 文件中 挂载于全局的变量名称 为了替换之前在开发环境下
+                webpackConfig.externals = {
+                  react: "React",
+                  "react-dom": "ReactDOM",
+                };
+                // 配置 CDN 资源地址
+                cdn = {
+                  js: [
+                    "https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js",
+                    "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js",
+                  ],
+                };
+              });
+        
+              // 通过 htmlWebpackPlugin 插件在 public/index.html 注入 CDN 资源 URL
+              const { isFound, match } = getPlugin(
+                webpackConfig,
+                pluginByName("HtmlWebpackPlugin"),
+              );
+        
+              if (isFound) {
+                // 找到了 HtmlWebpackPlugin 的插件
+                match.options.cdn = cdn;
+              }
+        
+              return webpackConfig;
+            },
+          },
+        };
+        ```
+        
+        - public/index.html
+        
+        ```html
+        <body>
+          <noscript>You need to enable JavaScript to run this app.</noscript>
+          <div id="root"></div>
+          <!-- 加载第三发包的 CDN 链接 -->
+          <% htmlWebpackPlugin.options.cdn.js.forEach(cdnURL => { %>
+          <script src="<%= cdnURL %>"></script>
+          <% }) %>
+        </body>
+        ```
+        
+
+# **项目演示**
+
+- 在线演示：https://geek-pc.itheima.net/login
+- 接口文档：https://geek.itheima.net/api-pc.html
+- 基地址：http://geek.itheima.net/v1_0
