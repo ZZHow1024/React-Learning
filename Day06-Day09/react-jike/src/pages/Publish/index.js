@@ -186,7 +186,7 @@ const Publish = () => {
           <Form.Item wrapperCol={{ offset: 4 }}>
             <Space>
               <Button size="large" type="primary" htmlType="submit">
-                发布文章
+                {articleId === null ? "发布文章" : "保存修改"}
               </Button>
             </Space>
           </Form.Item>
