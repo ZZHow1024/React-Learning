@@ -6,6 +6,17 @@
   top: 0;
   background: center/cover url('~@/assets/login.png');
 
+  .tips {
+    .tips-content {
+      display: flex;
+      justify-content: center;
+    }
+
+    .red {
+      color: red;
+    }
+  }
+
   .login-logo {
     width: 200px;
     height: 60px;

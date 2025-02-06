@@ -22,6 +22,14 @@ const Login = () => {
   return (
     <div className="login">
       <Card className="login-container">
+        <div className="tips">
+          <div className="tips-content">项目来源：黑马程序员</div>
+          <div className="tips-content red">
+            <span>项目仅用于演示，</span>
+            <strong>无需</strong>
+            <span>输入真实手机号。</span>
+          </div>
+        </div>
         <img className="login-logo" src={logo} alt="" />
         {/* 登录表单 */}
         <Form validateTrigger="onBlur" onFinish={onFinish}>
