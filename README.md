@@ -31,3 +31,5 @@ React学习路线
 [**React前端开发_Day10，包含 性能优化API、ref相关API、Class API类组件 和 Zustand**](./Day10)
 
 [**React前端开发_Day11，包含 React+TypeScript基础环境创建、useState与TypeScript、Props与TypeScript 和 useRef与TypeScript**](./Day11)
+
+[**React前端开发_Day12，包含 项目前置准备、Home模块、详情模块 和 项目演示**](./Day12)
